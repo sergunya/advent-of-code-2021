@@ -79,17 +79,30 @@ func generateEmptyMaps(size int) [][][]int {
 	return res
 }
 
-func partOne() {
+func play(untilLast bool) {
 	maps := readMaps()
 	resultMaps := generateEmptyMaps(len(maps))
 	numbers := readNumbers()
+	winners := make([]bool, len(maps), len(maps))
 
 	for i, v := range numbers {
 		for j, matrix := range maps {
 			if i > 3 {
-				res := markNumber(&resultMaps[j], &matrix, v, true)
-				if res {
-					return
+				win, res := markNumber(&resultMaps[j], &matrix, v, true)
+				if win {
+					if untilLast {
+						markWinner(&winners, j)
+						nonWinnersNum := getNonWinnersNumber(&winners)
+
+						if nonWinnersNum == 0 {
+							fmt.Printf("The winner of second part is %d\n", res)
+							return
+						}
+					} else {
+						fmt.Printf("The winner of first part is %d\n", res)
+						return
+					}
+
 				}
 			} else {
 				markNumber(&resultMaps[j], &matrix, v, false)
@@ -100,7 +113,25 @@ func partOne() {
 	fmt.Println("Couldn't determine the winner!")
 }
 
-func markNumber(resMatrix *[][]int, origMatrix *[][]string, v string, checkWin bool) bool {
+func markWinner(winners *[]bool, bordNumber int) {
+	if !(*winners)[bordNumber] {
+		(*winners)[bordNumber] = true
+	}
+}
+
+func getNonWinnersNumber(winners *[]bool) int {
+	count := 0
+
+	for _, v := range *winners {
+		if !v {
+			count += 1
+		}
+	}
+
+	return count
+}
+
+func markNumber(resMatrix *[][]int, origMatrix *[][]string, v string, checkWin bool) (bool, int) {
 	for i, xValue := range *origMatrix {
 		for j, yValue := range xValue {
 			if yValue == v {
@@ -110,16 +141,15 @@ func markNumber(resMatrix *[][]int, origMatrix *[][]string, v string, checkWin b
 					if checkRow(resMatrix, i) || checkCol(resMatrix, j) {
 						sum := sumUnmarkedNumbers(resMatrix, origMatrix)
 						val, _ := strconv.Atoi(v)
-						fmt.Printf("The winner of first part is %d", val*sum)
 
-						return true
+						return true, val * sum
 					}
 				}
 			}
 		}
 	}
 
-	return false
+	return false, -1
 }
 
 func sumUnmarkedNumbers(resMatrix *[][]int, matrix *[][]string) int {
@@ -157,5 +187,6 @@ func checkRow(resMatrix *[][]int, row int) bool {
 }
 
 func main() {
-	partOne()
+	play(false)
+	play(true)
 }
